@@ -1,0 +1,16 @@
+{
+  "name": "আমারবন্ধন - ইসলামিক ম্যাট্রিমনি",
+  "short_name": "AmarBondhon",
+  "description": "দ্বীনদার পাত্র-পাত্রী খোঁজার বিশ্বস্ত ইসলামিক মাধ্যম",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF9F2",
+  "theme_color": "#064E3B",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
