@@ -1,0 +1,398 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  phone             String    @unique
+  passwordHash      String
+  name              String
+  role              String    @default("USER") // USER, MODERATOR, FINANCE_ADMIN, SUPER_ADMIN
+  status            String    @default("ACTIVE") // ACTIVE, SUSPENDED, PENDING_VERIFICATION
+  isEmailVerified   Boolean   @default(true)
+  isPhoneVerified   Boolean   @default(true)
+  verificationCode  String?
+  lastLoginAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  biodata           Biodata?
+  subscriptions     Subscription[]
+  orders            Order[]
+  paymentSubmissions PaymentSubmission[]
+  sentInterests     Interest[] @relation("SentInterests")
+  receivedInterests Interest[] @relation("ReceivedInterests")
+  shortlists        Shortlist[]
+  accessRequestsSent BiodataAccessRequest[] @relation("Requester")
+  profileViewsSent  ProfileView[] @relation("Viewer")
+  blockedUsers      BlockRecord[] @relation("Blocker")
+  blockedByUsers    BlockRecord[] @relation("Blocked")
+  reportsFiled      ReportRecord[] @relation("Reporter")
+  messagesSent      Message[] @relation("SentMessages")
+  messagesReceived  Message[] @relation("ReceivedMessages")
+  callsInitiated    CallSession[] @relation("Caller")
+  callsReceived     CallSession[] @relation("Receiver")
+  notifications     Notification[]
+  supportTickets    SupportTicket[]
+  auditLogs         AuditLog[]
+}
+
+model Biodata {
+  id                     String    @id @default(uuid())
+  userId                 String    @unique
+  user                   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  biodataNumber          String    @unique // e.g. AB-2026-1001
+  profileCreatedFor      String    @default("SELF") // SELF, SON, DAUGHTER, BROTHER, SISTER, RELATIVE
+  maritalConsentGiven    Boolean   @default(true)
+
+  // Basic Demographics
+  gender                 String    // MALE, FEMALE
+  dateOfBirth            DateTime
+  age                    Int
+  maritalStatus          String    // NEVER_MARRIED, DIVORCED, WIDOWED, SEPARATED
+  heightCm               Int
+  weightKg               Int?
+  complexion             String    // FAIR, VERY_FAIR, WHEATISH, DUSKY, DARK
+  bloodGroup             String?   // A+, B+, O+, AB+, etc.
+
+  // Religion & Practice
+  religion               String    @default("ISLAM") // ISLAM, HINDUISM, CHRISTIANITY, BUDDHISM
+  religiousDenomination  String?   // SUNNI, SHIA, AHLE_HADITH, etc.
+  prayerFrequency        String?   // ALWAYS_5_TIMES, REGULAR, OCCASIONAL, RARELY
+  religiousAttire        String?   // BEARD, HIJAB, NIQAB, NONE
+
+  // Location
+  nationality            String    @default("Bangladeshi")
+  presentDivision        String
+  presentDistrict        String
+  presentUpazila         String?
+  presentAddress         String?
+  permanentDivision      String
+  permanentDistrict      String
+  permanentUpazila       String?
+
+  // Education & Career
+  educationLevel         String    // DOCTORATE, POST_GRADUATE, GRADUATE, DIPLOMA, HSC, ALIM, FAZIL, KAMIL
+  educationField         String?   // CSE, BBA, MBBS, etc.
+  instituteName          String?
+  occupationCategory     String    // GOVT_SERVICE, PRIVATE_JOB, BUSINESS, DOCTOR, ENGINEER, TEACHER, DEFENSE, BANKER, FREELANCER, STUDENT, HOMEMAKER, OTHER
+  designation            String?
+  companyName            String?
+  annualIncomeRange      String?   // BELOW_3_LAKH, LAKH_3_TO_6, LAKH_6_TO_12, LAKH_12_TO_20, ABOVE_20_LAKH, PREFER_NOT_TO_SAY
+
+  // Family Info
+  familyValues           String    @default("MODERATE") // ISLAMIC_PRACTICING, TRADITIONAL, MODERATE, LIBERAL
+  fatherAlive            Boolean   @default(true)
+  fatherProfession       String?
+  motherAlive            Boolean   @default(true)
+  motherProfession       String?
+  brothersCount          Int       @default(0)
+  sistersCount           Int       @default(0)
+  familyFinancialStatus  String    @default("MIDDLE_CLASS") // UPPER_CLASS, UPPER_MIDDLE, MIDDLE_CLASS, MODEST
+  familyBackgroundNote   String?
+
+  // Personal Lifestyle & Aspirations
+  aboutMe                String?
+  personalityHobbies     String?
+  futureGoals            String?
+
+  // Partner Preferences
+  partnerMinAge          Int       @default(18)
+  partnerMaxAge          Int       @default(45)
+  partnerMinHeightCm     Int       @default(140)
+  partnerMaxHeightCm     Int       @default(195)
+  partnerMaritalStatus   String?   // ANY, NEVER_MARRIED, DIVORCED_ACCEPTABLE
+  partnerReligion        String?
+  partnerEducation       String?
+  partnerProfession      String?
+  partnerDistrictPref    String?
+  partnerExpectations    String?
+
+  // Photos & Privacy
+  profilePhoto           String?
+  photoPrivacy           String    @default("REGISTERED_ONLY") // PUBLIC, REGISTERED_ONLY, ON_REQUEST, HIDDEN
+  guardianContactPhone   String?
+  guardianContactRelation String?
+
+  // Verification & Status
+  nationalIdCardDoc      String?
+  academicDoc            String?
+  isVerified             Boolean   @default(false)
+  status                 String    @default("APPROVED") // DRAFT, PENDING_REVIEW, APPROVED, REJECTED, SUSPENDED, HIDDEN, DELETED
+  completionPercentage   Int       @default(80)
+  rejectionReason        String?
+  viewsCount             Int       @default(0)
+  isFeatured             Boolean   @default(false)
+
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  shortlistedBy          Shortlist[]
+  accessRequests         BiodataAccessRequest[]
+  profileViews           ProfileView[]
+}
+
+model MembershipPlan {
+  id                   String         @id @default(uuid())
+  slug                 String         @unique // FREE, SILVER, GOLD, PLATINUM
+  nameEn               String
+  nameBn               String
+  badgeEn              String?
+  priceBdt             Int
+  originalPriceBdt     Int
+  durationDays         Int
+  isPopular            Boolean        @default(false)
+  isActive             Boolean        @default(true)
+  searchLimit          Int            @default(100)
+  interestLimit        Int            @default(10)
+  biodataAccessLimit   Int            @default(5)
+  directChatAllowed    Boolean        @default(false)
+  directCallAllowed    Boolean        @default(false)
+  featuresJson         String         // JSON array of strings
+  displayOrder         Int            @default(0)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  subscriptions        Subscription[]
+  orders               Order[]
+}
+
+model Subscription {
+  id                     String         @id @default(uuid())
+  userId                 String
+  user                   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId                 String
+  plan                   MembershipPlan @relation(fields: [planId], references: [id])
+  startDate              DateTime       @default(now())
+  endDate                DateTime
+  status                 String         @default("ACTIVE") // ACTIVE, EXPIRED, CANCELLED
+  interestsRemaining     Int            @default(10)
+  biodataAccessRemaining Int            @default(5)
+  orderId                String?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+}
+
+model Order {
+  id                   String         @id @default(uuid())
+  orderNumber          String         @unique // AB-ORD-2026-XXXXXX
+  userId               String
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId               String
+  plan                 MembershipPlan @relation(fields: [planId], references: [id])
+  amountBdt            Int
+  status               String         @default("PENDING_PAYMENT") // PENDING_PAYMENT, SUBMITTED_FOR_VERIFICATION, UNDER_REVIEW, APPROVED, REJECTED, INFO_REQUIRED, CANCELLED, EXPIRED, REFUNDED
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  submissions          PaymentSubmission[]
+}
+
+model PaymentMethodConfig {
+  id                   String    @id @default(uuid())
+  provider             String    // BKASH, NAGAD, ROCKET
+  displayNameEn        String
+  displayNameBn        String
+  accountNumber        String
+  maskedAccountNumber  String
+  accountType          String    // PERSONAL, PERSONAL_RETAIL, MERCHANT
+  instructionsEn       String
+  instructionsBn       String
+  transactionType      String    @default("SEND_MONEY") // SEND_MONEY, PAYMENT
+  referenceFormat      String    @default("Order Number (e.g. AB-ORD-XXXXXX)")
+  minAmountBdt         Int       @default(100)
+  maxAmountBdt         Int       @default(50000)
+  isEnabled            Boolean   @default(true)
+  isDefault            Boolean   @default(false)
+  requiresManualReview Boolean   @default(true)
+  qrCodeImageUrl       String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model PaymentSubmission {
+  id                   String    @id @default(uuid())
+  orderId              String
+  order                Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  userId               String
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider             String    // BKASH, NAGAD, ROCKET
+  senderNumber         String
+  transactionId        String    @unique
+  amountSentBdt        Int
+  paymentTimestamp     DateTime  @default(now())
+  receiptImageUrl      String?
+  userNotes            String?
+  reviewStatus         String    @default("SUBMITTED_FOR_VERIFICATION") // SUBMITTED_FOR_VERIFICATION, UNDER_REVIEW, APPROVED, REJECTED, INFO_REQUIRED
+  reviewedByAdminId    String?
+  reviewReason         String?
+  reviewedAt           DateTime?
+  isDuplicateRisk      Boolean   @default(false)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+}
+
+model Interest {
+  id           String    @id @default(uuid())
+  senderId     String
+  sender       User      @relation("SentInterests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId   String
+  receiver     User      @relation("ReceivedInterests", fields: [receiverId], references: [id], onDelete: Cascade)
+  status       String    @default("PENDING") // PENDING, ACCEPTED, DECLINED, CANCELLED
+  message      String?
+  createdAt    DateTime  @default(now())
+  respondedAt  DateTime?
+
+  @@unique([senderId, receiverId])
+}
+
+model Shortlist {
+  id           String    @id @default(uuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  biodataId    String
+  biodata      Biodata   @relation(fields: [biodataId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+
+  @@unique([userId, biodataId])
+}
+
+model BiodataAccessRequest {
+  id           String    @id @default(uuid())
+  requesterId  String
+  requester    User      @relation("Requester", fields: [requesterId], references: [id], onDelete: Cascade)
+  biodataId    String
+  biodata      Biodata   @relation(fields: [biodataId], references: [id], onDelete: Cascade)
+  status       String    @default("PENDING") // PENDING, APPROVED, DECLINED
+  createdAt    DateTime  @default(now())
+  grantedAt    DateTime?
+
+  @@unique([requesterId, biodataId])
+}
+
+model ProfileView {
+  id           String    @id @default(uuid())
+  viewerId     String
+  viewer       User      @relation("Viewer", fields: [viewerId], references: [id], onDelete: Cascade)
+  biodataId    String
+  biodata      Biodata   @relation(fields: [biodataId], references: [id], onDelete: Cascade)
+  viewedAt     DateTime  @default(now())
+}
+
+model BlockRecord {
+  id           String    @id @default(uuid())
+  blockerId    String
+  blocker      User      @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId    String
+  blocked      User      @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  reason       String?
+  createdAt    DateTime  @default(now())
+
+  @@unique([blockerId, blockedId])
+}
+
+model ReportRecord {
+  id           String    @id @default(uuid())
+  reporterId   String
+  reporter     User      @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetUserId String
+  reason       String
+  details      String?
+  status       String    @default("PENDING") // PENDING, INVESTIGATING, RESOLVED, DISMISSED
+  createdAt    DateTime  @default(now())
+}
+
+model Conversation {
+  id              String    @id @default(uuid())
+  participant1Id  String
+  participant2Id  String
+  lastMessageAt   DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+
+  messages        Message[]
+
+  @@unique([participant1Id, participant2Id])
+}
+
+model Message {
+  id             String        @id @default(uuid())
+  conversationId String
+  conversation   Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User          @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId     String
+  receiver       User          @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  content        String
+  attachmentUrl  String?
+  isRead         Boolean       @default(false)
+  readAt         DateTime?
+  createdAt      DateTime      @default(now())
+}
+
+model CallSession {
+  id              String    @id @default(uuid())
+  callerId        String
+  caller          User      @relation("Caller", fields: [callerId], references: [id], onDelete: Cascade)
+  receiverId      String
+  receiver        User      @relation("Receiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  callType        String    @default("VIDEO") // AUDIO, VIDEO
+  status          String    @default("INITIATED") // INITIATED, RINGING, CONNECTED, REJECTED, MISSED, COMPLETED, FAILED
+  roomId          String
+  durationSeconds Int       @default(0)
+  startedAt       DateTime  @default(now())
+  endedAt         DateTime?
+  createdAt       DateTime  @default(now())
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String    @default("INFO") // INTEREST, ACCEPTANCE, PAYMENT, APPROVAL, MESSAGE, CALL
+  linkUrl   String?
+  isRead    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+}
+
+model SupportTicket {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject     String
+  message     String
+  category    String    @default("GENERAL") // GENERAL, PAYMENT, ACCOUNT, PRIVACY
+  status      String    @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  adminReply  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model CmsContent {
+  id          String    @id @default(uuid())
+  key         String    @unique
+  titleEn     String
+  titleBn     String
+  contentEn   String
+  contentBn   String
+  updatedAt   DateTime  @updatedAt
+}
+
+model AuditLog {
+  id          String    @id @default(uuid())
+  adminId     String?
+  admin       User?     @relation(fields: [adminId], references: [id])
+  action      String    // e.g. PAYMENT_APPROVED, PAYMENT_REJECTED, USER_BANNED, PLAN_UPDATED
+  entityType  String    // Order, PaymentSubmission, User, Biodata, MembershipPlan
+  entityId    String
+  detailsJson String?
+  ipAddress   String?
+  createdAt   DateTime  @default(now())
+}

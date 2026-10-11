@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-maroon: #7A1735;
+  --color-ivory: #FFF9F2;
+  --color-gold: #C8A45D;
+  --color-dark: #29252A;
+  --font-inter: 'Inter', sans-serif;
+  --font-hind: 'Hind Siliguri', sans-serif;
+}
+
+body {
+  color: var(--color-dark);
+  background-color: var(--color-ivory);
+  font-family: var(--font-inter);
+  min-height: 100vh;
+}
+
+.font-bangla {
+  font-family: var(--font-hind);
+}
+
+/* Glassmorphism card utilities */
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(200, 164, 93, 0.25);
+}
+
+.glass-card-dark {
+  background: rgba(41, 37, 42, 0.95);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(200, 164, 93, 0.35);
+}
+
+.gold-border {
+  border-color: #C8A45D;
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #A6833D 0%, #C8A45D 50%, #E6CD8B 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.maroon-gradient {
+  background: linear-gradient(135deg, #7A1735 0%, #540F24 100%);
+}
+
+.gold-gradient {
+  background: linear-gradient(135deg, #C8A45D 0%, #A6833D 100%);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FFF9F2;
+}
+::-webkit-scrollbar-thumb {
+  background: #C8A45D;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #7A1735;
+}
+
+/* Hide scrollbar for smooth mobile carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Mobile responsive touch optimizations */
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button, a {
+  touch-action: manipulation;
+}
