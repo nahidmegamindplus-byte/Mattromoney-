@@ -6,10 +6,15 @@ import { CheckCircle2, Sparkles, ShieldCheck, ArrowRight } from 'lucide-react';
 export const revalidate = 60;
 
 export default async function PricingPage() {
-  const plans = await prisma.membershipPlan.findMany({
-    where: { isActive: true },
-    orderBy: { displayOrder: 'asc' },
-  });
+  let plans: any[] = [];
+  try {
+    plans = await prisma.membershipPlan.findMany({
+      where: { isActive: true },
+      orderBy: { displayOrder: 'asc' },
+    });
+  } catch (err) {
+    console.warn('Prisma DB query fallback in pricing page:', err);
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12">

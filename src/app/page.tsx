@@ -23,26 +23,33 @@ import {
 export const revalidate = 60; // ISR cache for fast page loads
 
 export default async function HomePage() {
-  // Fetch verified profiles from Supabase database (dynamic count)
-  const featuredProfiles = await prisma.biodata.findMany({
-    where: { status: 'APPROVED' },
-    take: 6,
-    orderBy: { createdAt: 'desc' },
-  });
+  let featuredProfiles: any[] = [];
+  let groomCount = 0;
+  let brideCount = 0;
+  let plans: any[] = [];
 
-  const groomCount = await prisma.biodata.count({
-    where: { gender: 'MALE', status: 'APPROVED' },
-  });
+  try {
+    featuredProfiles = await prisma.biodata.findMany({
+      where: { status: 'APPROVED' },
+      take: 6,
+      orderBy: { createdAt: 'desc' },
+    });
 
-  const brideCount = await prisma.biodata.count({
-    where: { gender: 'FEMALE', status: 'APPROVED' },
-  });
+    groomCount = await prisma.biodata.count({
+      where: { gender: 'MALE', status: 'APPROVED' },
+    });
 
-  // Fetch active membership plans
-  const plans = await prisma.membershipPlan.findMany({
-    where: { isActive: true },
-    orderBy: { displayOrder: 'asc' },
-  });
+    brideCount = await prisma.biodata.count({
+      where: { gender: 'FEMALE', status: 'APPROVED' },
+    });
+
+    plans = await prisma.membershipPlan.findMany({
+      where: { isActive: true },
+      orderBy: { displayOrder: 'asc' },
+    });
+  } catch (err) {
+    console.warn('Prisma DB query fallback during build:', err);
+  }
 
   return (
     <div className="space-y-12 sm:space-y-20">

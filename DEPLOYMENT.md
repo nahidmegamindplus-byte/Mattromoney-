@@ -1,100 +1,55 @@
-# Production Deployment Guide: AmarBondhon Matrimony
+# Vercel & Production Deployment Guide: AmarBondhon Matrimony
 
-This document describes how to deploy AmarBondhon Matrimony to a production environment with PostgreSQL, secure secrets, object storage, and domain hosting.
-
----
-
-## 1. Hosting Environment Prerequisites
-- **Node.js:** v20.x or v22.x LTS (compatible with v24)
-- **Database:** PostgreSQL v14+ (e.g., Supabase, Neon, AWS RDS, DigitalOcean Managed Database)
-- **Object Storage (Optional for large media):** AWS S3, Cloudflare R2, or local private filesystem storage
+This repository is **100% optimized and ready for one-click deployment on Vercel** with Supabase PostgreSQL and Next.js 15.
 
 ---
 
-## 2. Environment Variables Configuration (`.env.production`)
+## 🚀 1. One-Click Vercel Deployment Steps
 
-```env
-# Database Connection (PostgreSQL)
-DATABASE_URL="postgresql://user:password@db-host:5432/amarbondhon?schema=public&sslmode=require"
+1. **Go to Vercel**: Visit [https://vercel.com/new](https://vercel.com/new) and log in.
+2. **Import Repository**: Select your GitHub repository:
+   `nahidmegamindplus-byte/Mattromoney-`
+3. **Framework Preset**: Vercel will automatically detect **Next.js** (also configured in `vercel.json`).
+4. **Build & Development Settings**:
+   - Build Command: `prisma generate && next build` (automated by `vercel.json` and `package.json`)
+   - Output Directory: `.next`
+   - Install Command: `npm install`
+5. **Environment Variables**: Add the following environment variables in the Vercel project settings:
 
-# Security & Sessions (generate using `openssl rand -hex 32`)
-JWT_SECRET="YOUR_RANDOM_ENTERPRISE_KEY_AT_LEAST_32_CHARACTERS"
-NEXTAUTH_SECRET="ANOTHER_RANDOM_LONG_SECRET_KEY"
+| Variable Name | Description | Example / Live Value |
+| :--- | :--- | :--- |
+| `DATABASE_URL` | Supabase Session / Pooler Connection string (Port 5432) | `postgresql://postgres.pmjnpxwflpualalaxvml:Nm%40102060%40nm@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres` |
+| `DIRECT_URL` | Direct connection for Prisma migrations (Port 5432) | `postgresql://postgres.pmjnpxwflpualalaxvml:Nm%40102060%40nm@aws-0-ap-northeast-1.pooler.supabase.com:5432/postgres` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase Cloud project URL | `https://pmjnpxwflpualalaxvml.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Publishable / Anon API key | `sb_publishable_9C_JVxvLM4rL-y7TcLWlJg_1bnz5I_R` |
+| `JWT_SECRET` | Secret key for signing session tokens | `your-secure-jwt-secret-key-32-chars-long` |
+| `NEXT_PUBLIC_APP_URL` | Your live deployment URL (or leave blank for Vercel auto-domain) | `https://your-app.vercel.app` |
+| `NEXT_PUBLIC_APP_NAME` | Website Name | `আমারবন্ধন - AmarBondhon Matrimony` |
 
-# Application URL
-NEXT_PUBLIC_APP_URL="https://amarbondhon.com"
-NEXT_PUBLIC_APP_NAME="AmarBondhon Matrimony"
-
-# WebRTC & Calling Infrastructure (LiveKit Cloud or direct WebRTC)
-LIVEKIT_URL="wss://your-project.livekit.cloud"
-LIVEKIT_API_KEY="your_api_key"
-LIVEKIT_API_SECRET="your_api_secret"
-
-# Storage
-STORAGE_PROVIDER="local"
-STORAGE_LOCAL_DIR="/var/www/uploads"
-```
+6. **Click "Deploy"**: Vercel will run `prisma generate && next build`, create the serverless Lambdas and static assets, and give you your live URL!
 
 ---
 
-## 3. Switching to Production PostgreSQL
-In the repository, the complete PostgreSQL-compliant Prisma schema is provided at `prisma/schema.postgresql.prisma`.
+## 🛠️ 2. Why this repository is 100% Vercel-ready
 
-To switch Prisma from SQLite to PostgreSQL:
+- **Automated Prisma Generation**: `postinstall: "prisma generate"` and `vercel.json` ensure that the Prisma client binary is always generated inside Vercel's Amazon Linux runtime (`rhel-openssl-3.0.x`).
+- **Multi-target Binary Engines**: `prisma/schema.prisma` includes `binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x", "debian-openssl-3.0.x"]`.
+- **Zero Build-Time Failures**: Homepage and Pricing static/ISR pages wrap database queries with safe fallbacks so `next build` never fails even if database connection is cold during initial deployment.
+- **Supabase Storage Image Patterns**: `next.config.mjs` includes `**.supabase.co` in `images.remotePatterns` for optimized image delivery.
+- **Clean Git Tracking**: `.env` and `node_modules` are safely excluded via `.gitignore`.
+
+---
+
+## 💻 3. Local Development
+
 ```bash
-cp prisma/schema.postgresql.prisma prisma/schema.prisma
-npx prisma generate
-npx prisma migrate deploy # or npx prisma db push
-node scripts/seed.mjs
+# Install dependencies
+npm install
+
+# Run database generation
+npm run prisma:generate
+
+# Start development server
+npm run dev
 ```
-
----
-
-## 4. Production Build & Start
-```bash
-# 1. Build optimized bundle
-npm run build
-
-# 2. Run with production server (or use PM2 / Docker)
-npm run start
-```
-
-### Running with PM2 (Recommended for VPS / Linux):
-```bash
-npm install -g pm2
-pm2 start npm --name "amarbondhon" -- start
-pm2 save
-pm2 startup
-```
-
----
-
-## 5. Reverse Proxy Configuration (Nginx)
-
-```nginx
-server {
-    server_name amarbondhon.com www.amarbondhon.com;
-
-    location / {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # Static assets caching
-    location /_next/static/ {
-        proxy_pass http://localhost:3000;
-        proxy_cache_valid 200 365d;
-        add_header Cache-Control "public, max-age=31536000, immutable";
-    }
-
-    listen 443 ssl http2;
-    ssl_certificate /etc/letsencrypt/live/amarbondhon.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/amarbondhon.com/privkey.pem;
-}
-```
+Accessible at `http://localhost:3000`.
