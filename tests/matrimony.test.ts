@@ -22,8 +22,8 @@ describe('AmarBondhon Matrimonial Enterprise Test Suite', () => {
     });
 
     // Ensure plans exist
-    silverPlan = await prisma.membershipPlan.findUnique({ where: { slug: 'SILVER' } });
-    goldPlan = await prisma.membershipPlan.findUnique({ where: { slug: 'GOLD' } });
+    silverPlan = (await prisma.membershipPlan.findUnique({ where: { slug: 'STANDARD' } })) || (await prisma.membershipPlan.findUnique({ where: { slug: 'BASIC' } })) || (await prisma.membershipPlan.findUnique({ where: { slug: 'SILVER' } }));
+    goldPlan = (await prisma.membershipPlan.findUnique({ where: { slug: 'PREMIUM' } })) || (await prisma.membershipPlan.findUnique({ where: { slug: 'GOLD' } }));
   });
 
   afterAll(async () => {
@@ -351,7 +351,7 @@ describe('AmarBondhon Matrimonial Enterprise Test Suite', () => {
 
     it('strictly separates confirmed earned revenue from pending claims', async () => {
       const reports = await PaymentService.getFinancialReports();
-      expect(reports.confirmedEarnedRevenueBdt).toBeGreaterThanOrEqual(950);
+      expect(reports.confirmedEarnedRevenueBdt).toBeGreaterThanOrEqual(silverPlan.priceBdt);
       expect(typeof reports.pendingClaimsBdt).toBe('number');
       // Revenue calculation must NOT conflate pending claims with confirmed earned revenue
       expect(reports.confirmedEarnedRevenueBdt).not.toBe(
